@@ -1,0 +1,8 @@
+<config>
+    <modules>
+	<TVPage_Connect>
+            <active>true</active>
+            <codePool>local</codePool>
+	</TVPage_Connect>
+    </modules>
+</config>
