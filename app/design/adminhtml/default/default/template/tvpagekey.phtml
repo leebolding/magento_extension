@@ -1,0 +1,28 @@
+
+<?php
+$mod_info = (array)Mage::getConfig()->getNode('modules/TVPage_Connect')->children();
+$os_version = $mod_info['version'];
+$helper = Mage::helper('tvpconnect');
+$key = $helper->getKey();
+$ApiUrl = Mage::getUrl('tvpconnect/index'); 
+$os_url = $helper->getUrl();
+$magento_store = Mage::app()->getStore();
+$CompanyName = $magento_store->getName();
+$ContactName = '';
+$ContactEmail = Mage::getStoreConfig('contacts/email/recipient_email');
+$ContactPhone = Mage::getStoreConfig('general/store_information/phone');
+$os_link = $os_url. "?type=magento&apiUrl=" . urlencode($ApiUrl) . "&apiVersion=" . $os_version . "&apiKey=" . urlencode($key) . "&name=" . urlencode($CompanyName);
+?>
+
+<div class="content-header">
+    <table cellspacing="0" class="grid-header">
+        <tr>
+		<td><h3><?php echo $this->__('TVPage Connect') . ' (v. ' . $os_version .')'; ?></h3></td>
+	</tr>
+    </table>
+</div>
+
+<div style="width: 100%; margin: 0 auto; height: 100%">
+	<!--iframe src=<?php echo '"' . $os_link . '"' ?> name="TVPage_frame" frameborder="0" height="1600" width="990"></iframe-->
+	<iframe src=<?php echo '"' . $os_link . '"' ?> name="TVPage_frame" frameborder="0" height="100%" width="100%"></iframe>
+</div>

@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<layout>
+	<tvpconnect_adminhtml_admin_index>
+		<reference name="content">
+			<block type="adminhtml/template" name="tvpagekey" template="tvpconnect/tvpagekey.phtml"/>
+		</reference>
+	</tvpconnect_adminhtml_admin_index>
+</layout>
