@@ -4,87 +4,152 @@
  */
 class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
 
-	private $pageNr;
-	private $pageSize = 100;
+	private $page;
+	private $limit = 20;
 	private $json;
-  private $search = '';
+  
+  private $requestParams = array();
 
+  /**
+   * Help Action 
+   * 
+   * @return json help object
+   */
+  public function helpAction(){
+    
+    $this->json['helpText']  = "Pass actions with url/action?[vars]";
+    $this->json['actions']  = array (
+      'products' => array (
+        'description' => "list of products",
+        'options' => array (
+          'q' => "search string",
+          'cat[]' => 'filter categories',
+          'p'=> 'page',
+          'l'=> 'limit',
+        )  
+      ),
+      'categories' => array(
+        'description' => "List of categories"  
+      )
+    );
+    
+    $this->tvp_response();
+  }  
+  
   /**
    * Main controller function
    * 
    * @return type
    */
 	public function indexAction(){
-		// Initialize XML Response
-    $this->json = array();
-		$this->json['version'] = $this->getTVPageConnectVersion();
-    if ( !$this->verifyAccessKey($_GET['apiKey']) ) {
-      $this->json['error'] = "Invalid API Key";
-      return $this->echoResult();
-     }
-    
-    // Parse parameters and initiliase variables
-    $this->pageNr = (((isset($_GET['page']) && (is_numeric($_GET['page']))) ? (int) $_GET['page'] : 0)) + 1;	// OS uses 0 for first page
-    $action = (isset($_GET['action']) ? $_GET['action'] : '');
-    $this->search = (isset($_GET['search']) && strlen($_GET['search']) ? $_GET['search'] : '');	// OS uses 0 for first page
-    
-    if ( !strlen($action) ) {
-      $this->json['error'] = "No action passed";
-      return $this->echoResult();
-    }
-    
-    switch ($action) {
-      case 'products':
-        $this->productsAction();
-        break;
-      
-      case 'categories':
-        $this->categoriesAction();
-        break;
-      
-      default:
-        $this->json["error"] = "Unknown action: ".$action;
-        break;
-    }
+    $this->initTVP();
+    return $this->helpAction();
 	}
-
+  
   /**
-   * Retrieve products. Fills the product array
+   * Retrieve products
    * 
-   * @return void
+   * @return json object with products based on filter criteria
    */
-	public function productsAction(){
-		if( $this->getPageNoIsValid() ) {
-			$this->getProducts();
-      $this->echoResult();
-		}
-	}
+  public function productsAction(){
+    $this->initTVP();
+    $collection= Mage::getResourceModel('catalog/product_collection');
+    
+    $collection->addFieldToFilter('type_id', array('eq' => "simple"));
+    // create filters
+    if ( isset($this->requestParams['q']) ) {
+    $search = $this->requestParams['q'];
+    $collection->addFieldToFilter(
+      array(
+        array('attribute' => 'name', 'like' => "%$search%"))
+      );
+    }
 
+    $categories = $this->requestParams['cat'];
+    // now if categories were passed let's add them
+    if (  is_array($categories) &&  sizeof($categories) > 0 ) {
+    foreach ($categories as $cat) {
+      $ctf[]['finset'] = $cat;
+    }
+
+    $collection->joinField('category_id', 'catalog/category_product', 'category_id', 'product_id = entity_id', null, 'left')
+      ->addAttributeToFilter('category_id',array($ctf));
+    }
+    
+    $page = ((int)$this->requestParams['p'] + 1);
+    $limit = (int)$this->requestParams['l'];
+    if ($limit <= 0) {
+      $limit = $this->limit;
+    }
+
+    $collection->setPageSize($limit);
+    $collection->setCurPage($page);
+    $collection->load();
+    $lastPage = $collection->getLastPageNumber();
+    
+    $this->json['last_page'] = $collection->getLastPageNumber();
+    $this->json['products'] = array();
+    foreach ($collection AS $prod) {
+      $this->json['products'][$prod['entity_id']] = $this->getProductInfo($prod['entity_id'],$prod['updated_at']);
+    }
+    
+    $this->tvp_response();
+  }
+  
   /**
    * Retrieves all categories
    * 
    * @return void
    */
   public function categoriesAction(){
+    $this->initTVP();
     $this->getCategories();
-    $this->echoResult();
+    $this->tvp_response();
   }
+  
   /**
-   * Add the products to the data array
+   * Send response back to client. Take into account jsonp wrapper
+   * Echos data to stdout
    * 
    * @return void
    */
-	private function getProducts() {
-    $this->json['products'] = array();
-		$prodCol = $this->getProductCollection();
-		foreach($prodCol as $prod){
-      $prod = $this->getProductInfo($prod['entity_id'],$prod['updated_at']);
-      if ( is_array($prod) ) {
-        $this->json['products'][$prod['id']] = $prod;
-      }
-		}
-	}
+  protected function tvp_response(){
+    header("Content-type:application/json");
+    $callback = $this->requestParams['callback'];
+    $data = json_encode($this->json);
+    if ( strlen($callback) ) {
+      $data = $callback.'('.$data.')';
+    }
+    echo $data;
+  }  
   
+  /**
+   * Parses and sets the request parameters
+   * 
+   * @return void
+   */
+  protected function parseRequestParams(){
+    $this->requestParams = Mage::app()->getRequest()->getParams();
+  }
+  
+  /**
+   * * Called by each control type.
+   * * Initializes 
+   * * Checks api key is valid
+   *
+   *
+   */
+  protected function initTVP(){
+    $this->json = array();
+    $this->json['version'] = $this->getTVPageConnectVersion();
+    if ( !$this->verifyAccessKey($_GET['apiKey']) ) {
+      $this->json['error'] = "Invalid API Key";
+      $this->tvp_response();
+      exit(1);
+    }
+
+    $this->parseRequestParams();
+  }  
   /**
    * Fetch categories
    * 
@@ -141,22 +206,13 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
 		return $categoryData;
 	}
   
+  /**
+   * Retrieve the category model
+   * 
+   * @return type
+   */
   private function getCategoryModel(){
     return Mage::getModel('catalog/category');
-  }
-  
-  /**
-   * Echos the json encoded data array to stdout
-   * 
-   * @return void
-   */
-  protected function echoResult(){
-    header("Content-type:application/json");
-    $data = json_encode($this->json);
-    if ( strlen($_GET['callback']) ) {
-      $data = $_GET['callback'].'('.$data.')';
-    }
-    echo $data;
   }
   
   /**
@@ -168,25 +224,6 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
 		return Mage::getModel('catalog/product');
 	}
 
-  /**
-   * Retrieve the product collection 
-   * 
-   * @param int $pageSize
-   * @param int $pageNo
-   * 
-   * @return array
-   */
-	private function getProductCollection(){
-		$prodModel = $this->getProductModel();
-		$prod_data = $prodModel->getCollection();
-    $prod_data->addFieldToFilter('type_id', array('eq' => "simple"));
-    $prod_data->setPageSize($this->pageSize)
-    ->setCurPage($this->pageNr)
-    ->getData();
-    
-		return $prod_data;
-	}
-  
   /**
    * Return the product info for a single product
    * 
@@ -215,17 +252,6 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
     );
 	}
 
-  /**
-   * Check page is valid 
-   * 
-   * @return bool
-   */
-	private function getPageNoIsValid(){
-    // TODO: add filter search string... 
-    $productCollections = Mage::getModel('catalog/product')->getCollection()->getData();
-    return ($this->pageNr <= ceil(count($productCollections)/$this->pageSize));
-	}
-  
   /**
    * Retrieve the access key from database
    * 
@@ -266,7 +292,7 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
    * @return string
    */
 	private function getTVPageConnectVersion(){
-		//$mod_info = (array)Mage::getConfig()->getNode('modules/TVPage_Connect')->children();
-		return '1.0.0';
+		$mod_info = (array)Mage::getConfig()->getNode('modules/TVPage_Connect')->children();
+    return $mod_info['version'];
 	}
 }
