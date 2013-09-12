@@ -74,6 +74,10 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
 
     $collection->joinField('category_id', 'catalog/category_product', 'category_id', 'product_id = entity_id', null, 'left')
       ->addAttributeToFilter('category_id',array($ctf));
+    } else if ($categories == 'null') {
+      $collection->joinField('category_id', 'catalog/category_product', 'category_id', 'product_id = entity_id', null, 'left')
+        ->addAttributeToFilter('category_id', array('null' => true));
+    } else {
     }
     
     $page = ((int)$this->requestParams['p'] + 1);
