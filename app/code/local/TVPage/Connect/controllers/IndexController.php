@@ -163,10 +163,10 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
     $this->json['categories'] = array();
     $collection = $this->getCategoryCollection();
     foreach ($collection AS $c) {
-      $category = $this->getCategoryInfo($c['entity_id'], $c);
+      $category = $this->getCategoryInfo($c);
       if (is_array($category)) {
         $this->json['categories'][$category['id']] = $category;
-      }
+      } 
     }
   }
 
