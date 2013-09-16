@@ -69,15 +69,15 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
     // now if categories were passed let's add them
     if (  is_array($categories) &&  sizeof($categories) > 0 ) {
     foreach ($categories as $cat) {
-      $ctf[]['finset'] = $cat;
+      if ($cat == "null") {
+        $ctf[]['null'] = true;
+      } else {
+        $ctf[]['finset'] = $cat;
+      }
     }
 
     $collection->joinField('category_id', 'catalog/category_product', 'category_id', 'product_id = entity_id', null, 'left')
       ->addAttributeToFilter('category_id',array($ctf));
-    } else if ($categories == 'null') {
-      $collection->joinField('category_id', 'catalog/category_product', 'category_id', 'product_id = entity_id', null, 'left')
-        ->addAttributeToFilter('category_id', array('null' => true));
-    } else {
     }
     
     $page = ((int)$this->requestParams['p'] + 1);
