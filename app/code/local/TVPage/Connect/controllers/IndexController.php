@@ -187,6 +187,7 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
       'product_count' => htmlspecialchars($cat->getProductCount()),
       'parent_id' => $categoryData['parent_id'] ,
       'level' => $categoryData['level'],
+      'children' => $cat->getChildren()
       //'entity_type_id'=>  $c['entity_type_id']
       //'attribute_set_id'=>  $c['attribute_set_id']
     );
