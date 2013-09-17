@@ -14,6 +14,11 @@
 			<tvpconnect><class>TVPage_Connect_Helper</class></tvpconnect>
 		</helpers>
 		<models>
+      <catalog_resource>
+          <rewrite>
+            <product_collection>TVPage_Connect_Model_Resource_ProductCollection</product_collection>
+          </rewrite>
+      </catalog_resource>
 			<tvpconnect>
 				<class>TVPage_Connect_Model</class>
 				<resourceModel>tvpconnect_mysql4</resourceModel>

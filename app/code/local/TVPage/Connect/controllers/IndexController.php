@@ -58,7 +58,7 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
     $collection->addFieldToFilter('type_id', array('eq' => "simple"));
     // create filters
     if ( isset($this->requestParams['q']) ) {
-    $search = $this->requestParams['q'];
+      $search = $this->requestParams['q'];
     $collection->addFieldToFilter(
       array(
         array('attribute' => 'name', 'like' => "%$search%"))
@@ -68,30 +68,30 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
     $categories = $this->requestParams['cat'];
     // now if categories were passed let's add them
     if (  is_array($categories) &&  sizeof($categories) > 0 ) {
-    foreach ($categories as $cat) {
-      if ($cat == "null") {
-        $ctf[]['null'] = true;
-      } else {
-        $ctf[]['finset'] = $cat;
+      foreach ($categories as $cat) {
+        if ($cat == "null") {
+          $ctf[]['null'] = true;
+        } else {
+          $ctf[]['finset'] = $cat;
+        }
       }
-    }
-
+      
     $collection->joinField('category_id', 'catalog/category_product', 'category_id', 'product_id = entity_id', null, 'left')
       ->addAttributeToFilter('category_id',array($ctf));
     }
-    
+
     $page = ((int)$this->requestParams['p'] + 1);
     $limit = (int)$this->requestParams['l'];
     if ($limit <= 0) {
       $limit = $this->limit;
     }
-
+    
     $collection->setPageSize($limit);
     $collection->setCurPage($page);
     $collection->load();
-    $lastPage = $collection->getLastPageNumber();
     
     $this->json['last_page'] = $collection->getLastPageNumber();
+    $this->json['num_products'] = $collection->getSize();
     $this->json['products'] = array();
     foreach ($collection AS $prod) {
       $this->json['products'][$prod['entity_id']] = $this->getProductInfo($prod['entity_id'],$prod['updated_at']);
