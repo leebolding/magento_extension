@@ -24,6 +24,7 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
         'options' => array (
           'q' => "search string",
           'cat[]' => 'filter categories',
+          'ids[]' => "id filter",
           'p'=> 'page',
           'l'=> 'limit',
         )  
@@ -64,7 +65,7 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
         array('attribute' => 'name', 'like' => "%$search%"))
       );
     }
-
+    
     $categories = $this->requestParams['cat'];
     // now if categories were passed let's add them
     if (  is_array($categories) &&  sizeof($categories) > 0 ) {
@@ -79,7 +80,12 @@ class TVPage_Connect_IndexController extends Mage_Core_Controller_Front_Action{
     $collection->joinField('category_id', 'catalog/category_product', 'category_id', 'product_id = entity_id', null, 'left')
       ->addAttributeToFilter('category_id',array($ctf));
     }
-
+    
+    $ids=$this->requestParams['ids'];
+    if ( is_array($ids) && sizeof($ids) > 0 ) {
+      $collection->addAttributeToFilter('entity_id', array('in'=>$ids));
+    }
+    
     $page = ((int)$this->requestParams['p'] + 1);
     $limit = (int)$this->requestParams['l'];
     if ($limit <= 0) {
