@@ -13,7 +13,7 @@ $installer->run("
 INSERT INTO {$this->getTable('tvpconnectkeys')} VALUES (null,CONCAT(MD5(NOW()), MD5(CURTIME())), NOW());
 ");
 $installer->run("
-INSERT INTO {$this->getTable('tvpconnectkeys')} VALUES (null,'https://www.tvpage.com/settings/carts', NOW());
+INSERT INTO {$this->getTable('tvpconnectkeys')} VALUES (null,'https://app.tvpage.com/settings/carts', NOW());
 ");
 $installer->endSetup();
 ?>
